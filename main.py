@@ -31,6 +31,7 @@ async def start_bot2(update, context):
         await msg2.delete()
     except:
         pass
+
 async def main():
     app1 = Application.builder().token(FILE_ID_BOT_TOKEN).build()
     app1.add_handler(CommandHandler("start", start_file_bot))
@@ -40,11 +41,16 @@ async def main():
     app3 = Application.builder().token(BOT2_TOKEN).build()
     app3.add_handler(CommandHandler("start", start_bot2))
 
-    await asyncio.gather(
-        app1.run_polling(),
-        app2.run_polling(),
-        app3.run_polling()
-    )
-    print("3 Bots Started...")
+    async with app1, app2, app3:
+        await app1.start()
+        await app2.start()
+        await app3.start()
+        await asyncio.gather(
+            app1.updater.start_polling(),
+            app2.updater.start_polling(),
+            app3.updater.start_polling()
+        )
+        print("3 Bots Started...")
+        await asyncio.Event().wait()
 
 asyncio.run(main())
