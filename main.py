@@ -1,0 +1,51 @@
+import asyncio
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+FILE_ID_BOT_TOKEN = "PASTE_1ST_BOT_TOKEN_HERE"
+BOT1_TOKEN = "PASTE_2ND_BOT_TOKEN_HERE"
+BOT2_TOKEN = "PASTE_3RD_BOT_TOKEN_HERE"
+
+VIDEO_1 = "PASTE_VIDEO_1_FILE_ID"
+VIDEO_2 = "PASTE_VIDEO_2_FILE_ID"
+
+async def get_id(update, context):
+    if update.message.video:
+        await update.message.reply_text(f"File ID: `{update.message.video.file_id}`")
+    else:
+        await update.message.reply_text("Video pampu mama!")
+
+async def start_file_bot(update, context):
+    await update.message.reply_text("Hi mama! Video pampu, File ID istha!")
+
+async def start_bot1(update, context):
+    button = [[InlineKeyboardButton("▶️ Watch Video", url="https://t.me/YOUR_BOT2_USERNAME?start=video")]]
+    await update.message.reply_text("Kindha button click cheyyi 👇", reply_markup=InlineKeyboardMarkup(button))
+
+async def start_bot2(update, context):
+    msg1 = await update.message.reply_video(video=VIDEO_1, caption="5 mins lo delete avthadi")
+    msg2 = await update.message.reply_video(video=VIDEO_2, caption="5 mins lo delete avthadi")
+    await asyncio.sleep(300)
+    try:
+        await msg1.delete()
+        await msg2.delete()
+    except:
+        pass
+
+async def main():
+    app1 = Application.builder().token(FILE_ID_BOT_TOKEN).build()
+    app1.add_handler(CommandHandler("start", start_file_bot))
+    app1.add_handler(MessageHandler(filters.VIDEO, get_id))
+    app2 = Application.builder().token(BOT1_TOKEN).build()
+    app2.add_handler(CommandHandler("start", start_bot1))
+    app3 = Application.builder().token(BOT2_TOKEN).build()
+    app3.add_handler(CommandHandler("start", start_bot2))
+    await asyncio.gather(
+        app1.initialize(), app2.initialize(), app3.initialize(),
+        app1.start(), app2.start(), app3.start(),
+        app1.updater.start_polling(), app2.updater.start_polling(), app3.updater.start_polling()
+    )
+    print("3 Bots Started...")
+    await asyncio.Event().wait()
+
+asyncio.run(main())
