@@ -2,9 +2,9 @@ import asyncio
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-FILE_ID_BOT_TOKEN = "PASTE_1ST_BOT_TOKEN_HERE"
-BOT1_TOKEN = "PASTE_2ND_BOT_TOKEN_HERE"
-BOT2_TOKEN = "PASTE_3RD_BOT_TOKEN_HERE"
+FILE_ID_BOT_TOKEN = "9282102705:AAHZKh_6kcfBaLseI_WTAJORNyfmnmYVHuM"
+BOT1_TOKEN = "9116495685:AAF22rs147pbc_rY5pAok3Lx3wshtyGxZLM"
+BOT2_TOKEN = "9224056622:AAHBD5P4jjRKhK1jSchcGUnrY9UjKhGbI-A"
 
 VIDEO_1 = "PASTE_VIDEO_1_FILE_ID"
 VIDEO_2 = "PASTE_VIDEO_2_FILE_ID"
