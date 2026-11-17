@@ -1,4 +1,6 @@
 import asyncio
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -31,7 +33,18 @@ async def start_bot2(update, context):
         await msg2.delete()
     except:
         pass
+def keep_alive():
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is Live!")
+        def log_message(self, *args):
+            pass
+    port = int(os.environ.get("PORT", 10000))
+    HTTPServer(("0.0.0.0", port), Handler).serve_forever()
 
+threading.Thread(target=keep_alive, daemon=True).start()
 async def main():
     app1 = Application.builder().token(FILE_ID_BOT_TOKEN).build()
     app1.add_handler(CommandHandler("start", start_file_bot))
