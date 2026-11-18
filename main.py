@@ -3,7 +3,7 @@ from flask import Flask
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-TOKEN = "9282102705:AAFr672ot5HqvlIe3g4iD2BFFmuY2HQVekE"
+TOKEN = "9282102705:AAHEExuvYDgE8kTrxo4qm54aieGm1LT9KtY"
 
 app_flask = Flask(__name__)
 @app_flask.route('/')
