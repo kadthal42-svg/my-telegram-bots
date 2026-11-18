@@ -4,7 +4,7 @@ from flask import Flask
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-BOT_TOKEN = "9282102705:AAEI1T8C6TA91gsxJxEpWszpmJO3NTyub7I"
+BOT_TOKEN = "9282102705:AAFd0XQBTIdIbYqqMWKauWqGpIL08VglW98"
 VIDEO_1 = "`BAACAgQAAxkBAAM5av1tLHAunzHjQbGJVhU8l0CO1rsAAkArAAKTVjBT_lyiIeBDkYk9BA`"
 VIDEO_2 = "`BAACAgQAAxkBAAM0av1sbusZjsafulMr_Lit_EpmWDgAAtwcAAK0Y9BTcstzacNM-xs9BA`"
 
