@@ -20,12 +20,14 @@ batches = {}
 current_batch = []
 batch_mode = False
 
+def make_short_code():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         return
     code = context.args[0]
     if code in batches:
-        await update.message.reply_text("Videos / Pics vasthunnayi mama!")
         for f_type, file_id in batches[code]:
             if f_type == "photo":
                 await update.message.reply_photo(photo=file_id)
@@ -52,28 +54,37 @@ async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_batch.append(("video", file_id))
         await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
         return
+
+    # Single Pic / Video pedithe - SHORT ID ivvu
     if update.message.photo:
         file_id = update.message.photo[-1].file_id
-        await update.message.reply_text(f"Pic vachindhi mama! 📸\n\nFile ID:\n`{file_id}`", parse_mode="Markdown")
+        f_type = "photo"
     elif update.message.video:
         file_id = update.message.video.file_id
-        await update.message.reply_text(f"Video vachindhi mama! 🎥\n\nFile ID:\n`{file_id}`", parse_mode="Markdown")
+        f_type = "video"
+    else:
+        return
+
+    short_id = make_short_code()
+    batches[short_id] = [(f_type, file_id)]
+    link = f"https://t.me/{BOT_USERNAME}?start={short_id}"
+    await update.message.reply_text(f"Done mama! ✅\n\nShort ID:\n`{short_id}`\n\nLink:\n{link}\n\nIdhi Channel lo paste cheyyi mama!", parse_mode="Markdown")
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
     if not current_batch:
         await update.message.reply_text("Emi pettaledhu mama! Mundhu Pic / Video pettu!")
         return
-    code = "BQ" + ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    batches[code] = current_batch.copy()
-    link = f"https://t.me/{BOT_USERNAME}?start={code}"
+    short_id = make_short_code()
+    batches[short_id] = current_batch.copy()
+    link = f"https://t.me/{BOT_USERNAME}?start={short_id}"
     keyboard = [
         [InlineKeyboardButton("PREVIEW : CLICK HERE", url="https://t.me/NEE_PREVIEW")],
         [InlineKeyboardButton("POST LINK 👇", url="https://t.me/NEE_POST")],
         [InlineKeyboardButton("HOW TO DOWNLOAD : CLICK HERE", url="https://t.me/NEE_TUTORIAL")],
         [InlineKeyboardButton("JOIN BACKUP : CLICK HERE", url="https://t.me/NEE_BACKUP")],
     ]
-    await update.message.reply_text(f"Ready mama! ✅\n{len(current_batch)} Files Ready!\n\nLink:\n{link}", reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text(f"Ready mama! ✅\n{len(current_batch)} Files Ready!\n\nShort ID:\n`{short_id}`\n\nLink:\n{link}", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
     current_batch.clear()
     batch_mode = False
 
