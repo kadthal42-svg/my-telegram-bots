@@ -8,7 +8,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 TOKEN = os.getenv("TOKEN")
 BOT_USERNAME = "Mickyram_bot"
 
-# Render kosam Dummy Website
 app_flask = Flask(__name__)
 @app_flask.route('/')
 def home():
@@ -22,20 +21,19 @@ current_batch = []
 batch_mode = False
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.args:
-        code = context.args[0]
-        if code in batches:
-            await update.message.reply_text("Videos / Pics vasthunnayi mama!")
-            for f_type, file_id in batches[code]:
-                if f_type == "photo":
-                    await update.message.reply_photo(photo=file_id)
-                else:
-                    await update.message.reply_video(video=file_id)
-            return
-        else:
-            await update.message.reply_text("Link expired mama! Malli pampu!")
-            return
-    await update.message.reply_text("Hi mama! 👋\n\nOka Pic / Video pettu - File ID istha!\nLeda /batch kottu - Multiple pettochu!")
+    if not context.args:
+        return
+    code = context.args[0]
+    if code in batches:
+        await update.message.reply_text("Videos / Pics vasthunnayi mama!")
+        for f_type, file_id in batches[code]:
+            if f_type == "photo":
+                await update.message.reply_photo(photo=file_id)
+            else:
+                await update.message.reply_video(video=file_id)
+        return
+    else:
+        return
 
 async def batch_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
@@ -45,7 +43,6 @@ async def batch_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
-    # Batch lo unte - collect cheyyi
     if batch_mode:
         if update.message.photo:
             file_id = update.message.photo[-1].file_id
@@ -55,8 +52,6 @@ async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_batch.append(("video", file_id))
         await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
         return
-
-    # Batch lo lekapothe - Single file ki File ID ivvu
     if update.message.photo:
         file_id = update.message.photo[-1].file_id
         await update.message.reply_text(f"Pic vachindhi mama! 📸\n\nFile ID:\n`{file_id}`", parse_mode="Markdown")
