@@ -51,29 +51,14 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
-    # Batch Mode lo unte
-    if batch_mode:
-        if update.message.photo:
-            file_id = update.message.photo[-1].file_id
-            current_batch.append(("photo", file_id))
-        elif update.message.video:
-            file_id = update.message.video.file_id
-            current_batch.append(("video", file_id))
-        elif update.message.document:
-            # File la pampina kuda teesuko
-            if update.message.document.mime_type and "image" in update.message.document.mime_type:
-                current_batch.append(("photo", update.message.document.file_id))
-            elif update.message.document.mime_type and "video" in update.message.document.mime_type:
-                current_batch.append(("video", update.message.document.file_id))
-            else:
-                await update.message.reply_text("Idhi Pic / Video kaadhu mama!")
-                return
-        else:
-            return
-        await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
+    print("MESSAGE VACHINDHI:", update.message.photo, update.message.video, update.message.document)
+    # Emi vachina mundhu cheppu - Handler pani chesthundha ledha telusthadhi
+    if not update.message.photo and not update.message.video and not update.message.document:
         return
 
-    # Normal Mode - Single Pic
+    file_id = None
+    f_type = None
+
     if update.message.photo:
         file_id = update.message.photo[-1].file_id
         f_type = "photo"
@@ -81,16 +66,21 @@ async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
         file_id = update.message.video.file_id
         f_type = "video"
     elif update.message.document:
-        if update.message.document.mime_type and "image" in update.message.document.mime_type:
-            file_id = update.message.document.file_id
-            f_type = "photo"
-        elif update.message.document.mime_type and "video" in update.message.document.mime_type:
-            file_id = update.message.document.file_id
+        file_id = update.message.document.file_id
+        # File lo Pic a Video a chudu
+        mime = update.message.document.mime_type or ""
+        if "video" in mime:
             f_type = "video"
         else:
-            await update.message.reply_text("Idhi Pic / Video kaadhu mama!")
-            return
-    else:
+            f_type = "photo"
+
+    if not file_id:
+        await update.message.reply_text("File dorakaledhu mama!")
+        return
+
+    if batch_mode:
+        current_batch.append((f_type, file_id))
+        await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
         return
 
     short_id = make_short_code()
@@ -101,7 +91,7 @@ async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
     if not current_batch:
-        batch_mode = False  # <-- IDHE FIX MAMA! Khaali unna kuda Batch Mode OFF cheyyali
+        batch_mode = False
         await update.message.reply_text("Emi pettaledhu mama! Batch Close chesa! Ippudu Pic pettu, Short ID vasthadhi!")
         return
     short_id = make_short_code()
@@ -124,5 +114,6 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("batch", batch_start))
     app.add_handler(CommandHandler("done", done))
     app.add_handler(CommandHandler("cancel", cancel))
-    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.IMAGE | filters.Document.VIDEO, handle_single))
+    # IDHE MAIN FIX MAMA - Emi pampina pattukuntadhi!
+    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, handle_single))
     app.run_polling(drop_pending_updates=True)
