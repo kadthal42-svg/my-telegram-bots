@@ -14,17 +14,38 @@ batch_mode = False
 def make_id():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
+async def delete_after_5min(context, chat_id, msg_ids):
+    await asyncio.sleep(300)  # 5 Min
+    for mid in msg_ids:
+        try:
+            await context.bot.delete_message(chat_id=chat_id, message_id=mid)
+        except:
+            pass
+    # Delete ayyaka User ki Notification
+    try:
+        await context.bot.send_message(chat_id=chat_id, text="⏰ 5 Mins ayipoyayi! Ee Files Auto Delete ayyayi!")
+    except:
+        pass
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Hi! Pic / Video pettu!")
         return
     code = context.args[0]
     if code in batches:
+        # 1. User ki Notification - Mundhe
+        await update.message.reply_text("⚠️ Ee Files 5 Min lo Auto Delete avthayi! Ventane Save chesukondi!")
+
+        sent_ids = []
         for f_type, file_id in batches[code]:
             if f_type == "photo":
-                await update.message.reply_photo(photo=file_id)
+                m = await update.message.reply_photo(photo=file_id)
             else:
-                await update.message.reply_video(video=file_id)
+                m = await update.message.reply_video(video=file_id)
+            sent_ids.append(m.message_id)
+
+        # 2. 5 Min taruvatha Delete + Notification
+        asyncio.create_task(delete_after_5min(context, update.effective_chat.id, sent_ids))
     else:
         await update.message.reply_text("Link expired!")
 
@@ -85,7 +106,6 @@ app_bot.add_handler(CommandHandler("done", done))
 app_bot.add_handler(CommandHandler("cancel", cancel))
 app_bot.add_handler(MessageHandler(filters.ALL, handle_all))
 
-# Bot ni Start cheyyali - Idhe miss ayyindhi mundhu!
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 loop.run_until_complete(app_bot.initialize())
