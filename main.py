@@ -1,76 +1,53 @@
-import asyncio, os, threading, random, string
-from flask import Flask
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+import random, string
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 TOKEN = "9282102705:AAHEExuvYDgE8kTrxo4qm54aieGm1LT9KtY"
+BOT_USERNAME = "Mickyram_bot"
 
-VIDEOS = {}
+batches = {}
+current_batch = []
 
-def make_code():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
-app_flask = Flask(__name__)
-@app_flask.route('/')
-def home(): return "Bot is Live!"
-def run_flask():
-    port = int(os.environ.get("PORT", 10000))
-    app_flask.run(host="0.0.0.0", port=port)
-
-# NUVVU VIDEO / PHOTO PAMPITHE
-async def get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.video:
-        file_id = update.message.video.file_id
-        ftype = "video"
-    elif update.message.photo:
-        file_id = update.message.photo[-1].file_id
-        ftype = "photo"
-    else:
-        return
-
-    code = make_code()
-    VIDEOS[code] = (ftype, file_id)
-    bot_name = (await context.bot.get_me()).username
-    link = f"https://t.me/{bot_name}?start={code}"
-    await update.message.reply_text(f"✅ Done! {ftype}\n\n🔗 Link:\n{link}\n\nCode: {code}")
-
-# USER LINK CLICK CHESTHE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Video / Photo pampu mama.")
-        return
-    code = context.args[0]
-    data = VIDEOS.get(code)
-    if not data:
-        await update.message.reply_text("❌ Dorakaledhu mama, malli link tiyyu. Render restart ayyindhi.")
-        return
-    
-    ftype, file_id = data
-    if ftype == "video":
-        media_msg = await context.bot.send_video(chat_id=update.effective_chat.id, video=file_id)
-    else:
-        media_msg = await context.bot.send_photo(chat_id=update.effective_chat.id, photo=file_id)
+    # User Link click chesi vachinappudu
+    if context.args:
+        code = context.args[0]
+        if code in batches:
+            await update.message.reply_text("Videos vasthunnayi mama! Wait...")
+            for file_id in batches[code]:
+                await update.message.reply_video(video=file_id)
+            return
+    await update.message.reply_text("Hi mama! 10 videos pampali ante /batch kottu")
 
-    note_msg = await context.bot.send_message(chat_id=update.effective_chat.id, text="⚠️ NOTE: This message will delete in 5 mins.\nPlease save or forward this!")
-    await asyncio.sleep(300)
-    try:
-        await context.bot.delete_message(update.effective_chat.id, media_msg.message_id)
-        await context.bot.delete_message(update.effective_chat.id, note_msg.message_id)
-        await context.bot.delete_message(update.effective_chat.id, update.message.message_id)
-    except: pass
+async def batch_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    current_batch.clear()
+    await update.message.reply_text("Ok mama! Ippudu 10 videos pampu, ayyaka /done kottu")
 
-async def run_bot():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO, get_id))
-    await app.bot.delete_webhook(drop_pending_updates=True)
-    await app.initialize(); await app.start()
-    await app.updater.start_polling(drop_pending_updates=True)
+async def collect(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.video:
+        current_batch.append(update.message.video.file_id)
+        await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama!")
 
-def start_bot_thread():
-    loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)
-    loop.run_until_complete(run_bot()); loop.run_forever()
+async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    code = "BQ" + ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    batches[code] = current_batch.copy()
+    link = f"https://t.me/{BOT_USERNAME}?start={code}"
 
-if __name__ == "__main__":
-    threading.Thread(target=start_bot_thread, daemon=True).start()
-    run_flask()
+    keyboard = [
+        [InlineKeyboardButton("PREVIEW : CLICK HERE", url="https://t.me/NEE_PREVIEW_CHANNEL")],
+        [InlineKeyboardButton("POST LINK 👇", url="https://t.me/NEE_POST_LINK")],
+        [InlineKeyboardButton("HOW TO DOWNLOAD : CLICK HERE", url="https://t.me/NEE_TUTORIAL")],
+        [InlineKeyboardButton("JOIN BACKUP : CLICK HERE", url="https://t.me/NEE_BACKUP_CHANNEL")],
+    ]
+    await update.message.reply_text(
+        f"Ready mama! Idhigo Link:\n{link}",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    current_batch.clear()
+
+app = Application.builder().token(TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("batch", batch_start))
+app.add_handler(CommandHandler("done", done))
+app.add_handler(MessageHandler(filters.VIDEO, collect))
+app.run_polling()
