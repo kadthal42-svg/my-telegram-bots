@@ -5,7 +5,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 TOKEN = os.getenv("TOKEN")
 BOT_USERNAME = "Mickyram_bot"
-WEBHOOK_URL = os.getenv("RENDER_EXTERNAL_URL")  # Render adhe isthadhi
 
 app_flask = Flask(__name__)
 batches = {}
@@ -79,7 +78,6 @@ async def handle_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = f"https://t.me/{BOT_USERNAME}?start={sid}"
     await msg.reply_text(f"Short ID: {sid}\nLink: {link}")
 
-# Bot Setup
 app_bot = Application.builder().token(TOKEN).build()
 app_bot.add_handler(CommandHandler("start", start))
 app_bot.add_handler(CommandHandler("batch", batch_cmd))
@@ -87,21 +85,24 @@ app_bot.add_handler(CommandHandler("done", done))
 app_bot.add_handler(CommandHandler("cancel", cancel))
 app_bot.add_handler(MessageHandler(filters.ALL, handle_all))
 
+# Bot ni Start cheyyali - Idhe miss ayyindhi mundhu!
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(app_bot.initialize())
+
 @app_flask.route('/')
 def home():
-    return "Bot Alive - Webhook Mode!"
+    return "Bot Alive - Webhook Mode FIXED!"
 
 @app_flask.route('/webhook', methods=['POST'])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), app_bot.bot)
-    asyncio.run(app_bot.process_update(update))
+    try:
+        data = request.get_json(force=True)
+        update = Update.de_json(data, app_bot.bot)
+        loop.run_until_complete(app_bot.process_update(update))
+    except Exception as e:
+        print(f"WEBHOOK ERROR: {e}")
     return "ok"
-
-@app_flask.route('/setwebhook')
-def setwebhook():
-    url = f"{WEBHOOK_URL}/webhook"
-    asyncio.run(app_bot.bot.set_webhook(url))
-    return f"Webhook Set: {url}"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
