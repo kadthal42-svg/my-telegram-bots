@@ -6,6 +6,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import random, string
 
 TOKEN = os.getenv("9282102705:AAHEExuvYDgE8kTrxo4qm54aieGm1LT9KtY")
+print(f"TOKEN LENGTH CHECK: {len(TOKEN) if TOKEN else 0}")
+print(f"TOKEN START CHECK: {TOKEN[:5] if TOKEN else 'NO TOKEN'}")
 BOT_USERNAME = "Mickyram_bot"
 
 # Dummy Website - Render kosam
