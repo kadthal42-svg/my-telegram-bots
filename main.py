@@ -1,53 +1,66 @@
-import random, string
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+import os
+import threading
+from flask import Flask
+from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+import random, string
 
-TOKEN = "9282102705:AAHEExuvYDgE8kTrxo4qm54aieGm1LT9KtY"
+TOKEN = os.getenv("9282102705:AAHEExuvYDgE8kTrxo4qm54aieGm1LT9KtY")
 BOT_USERNAME = "Mickyram_bot"
+
+# Dummy Website - Render kosam
+app_flask = Flask(__name__)
+@app_flask.route('/')
+def home():
+    return "Mickyram Bot is Alive!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host="0.0.0.0", port=port)
 
 batches = {}
 current_batch = []
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # User Link click chesi vachinappudu
     if context.args:
         code = context.args[0]
         if code in batches:
-            await update.message.reply_text("Videos vasthunnayi mama! Wait...")
+            await update.message.reply_text("Videos vasthunnayi mama!")
             for file_id in batches[code]:
                 await update.message.reply_video(video=file_id)
             return
-    await update.message.reply_text("Hi mama! 10 videos pampali ante /batch kottu")
+    await update.message.reply_text("Hi mama! /batch kottu")
 
 async def batch_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_batch.clear()
-    await update.message.reply_text("Ok mama! Ippudu 10 videos pampu, ayyaka /done kottu")
+    await update.message.reply_text("Ok mama! 10 videos pampu, /done kottu")
 
 async def collect(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.video:
         current_batch.append(update.message.video.file_id)
-        await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama!")
+        await update.message.reply_text(f"{len(current_batch)}/10 vachayi!")
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     code = "BQ" + ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     batches[code] = current_batch.copy()
     link = f"https://t.me/{BOT_USERNAME}?start={code}"
-
     keyboard = [
-        [InlineKeyboardButton("PREVIEW : CLICK HERE", url="https://t.me/NEE_PREVIEW_CHANNEL")],
-        [InlineKeyboardButton("POST LINK 👇", url="https://t.me/NEE_POST_LINK")],
+        [InlineKeyboardButton("PREVIEW : CLICK HERE", url="https://t.me/NEE_PREVIEW")],
+        [InlineKeyboardButton("POST LINK 👇", url="https://t.me/NEE_POST")],
         [InlineKeyboardButton("HOW TO DOWNLOAD : CLICK HERE", url="https://t.me/NEE_TUTORIAL")],
-        [InlineKeyboardButton("JOIN BACKUP : CLICK HERE", url="https://t.me/NEE_BACKUP_CHANNEL")],
+        [InlineKeyboardButton("JOIN BACKUP : CLICK HERE", url="https://t.me/NEE_BACKUP")],
     ]
-    await update.message.reply_text(
-        f"Ready mama! Idhigo Link:\n{link}",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    await update.message.reply_text(f"Ready mama! Link:\n{link}", reply_markup=InlineKeyboardMarkup(keyboard))
     current_batch.clear()
 
-app = Application.builder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("batch", batch_start))
-app.add_handler(CommandHandler("done", done))
-app.add_handler(MessageHandler(filters.VIDEO, collect))
-app.run_polling(drop_pending_updates=True)
+if __name__ == "__main__":
+    # Flask ni pakkana run cheyyi
+    threading.Thread(target=run_flask, daemon=True).start()
+    
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("batch", batch_start))
+    app.add_handler(CommandHandler("done", done))
+    app.add_handler(MessageHandler(filters.VIDEO, collect))
+    app.run_polling(drop_pending_updates=True)
