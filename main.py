@@ -24,6 +24,7 @@ def make_short_code():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Plain /start kottithe - EM RAVODHU, Silent
     if not context.args:
         return
     code = context.args[0]
@@ -51,42 +52,42 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_single(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
-    print("MESSAGE VACHINDHI:", update.message.photo, update.message.video, update.message.document)
-    # Emi vachina mundhu cheppu - Handler pani chesthundha ledha telusthadhi
-    if not update.message.photo and not update.message.video and not update.message.document:
+    msg = update.message
+    if not msg:
         return
 
+    # Direct ga pettina, Forward chesina, File la pampina - anni pattukuntadhi
     file_id = None
     f_type = None
 
-    if update.message.photo:
-        file_id = update.message.photo[-1].file_id
+    if msg.photo:
+        file_id = msg.photo[-1].file_id
         f_type = "photo"
-    elif update.message.video:
-        file_id = update.message.video.file_id
+    elif msg.video:
+        file_id = msg.video.file_id
         f_type = "video"
-    elif update.message.document:
-        file_id = update.message.document.file_id
-        # File lo Pic a Video a chudu
-        mime = update.message.document.mime_type or ""
+    elif msg.document:
+        file_id = msg.document.file_id
+        mime = msg.document.mime_type or ""
         if "video" in mime:
             f_type = "video"
         else:
             f_type = "photo"
-
-    if not file_id:
-        await update.message.reply_text("File dorakaledhu mama!")
+    elif msg.animation:
+        file_id = msg.animation.file_id
+        f_type = "video"
+    else:
         return
 
     if batch_mode:
         current_batch.append((f_type, file_id))
-        await update.message.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
+        await msg.reply_text(f"{len(current_batch)}/10 vachayi mama! Inka pettu, leka /done kottu!")
         return
 
     short_id = make_short_code()
     batches[short_id] = [(f_type, file_id)]
     link = f"https://t.me/{BOT_USERNAME}?start={short_id}"
-    await update.message.reply_text(f"Done mama! ✅\n\nShort ID:\n`{short_id}`\n\nLink:\n{link}\n\nIdhi Channel lo paste cheyyi mama!", parse_mode="Markdown")
+    await msg.reply_text(f"Done mama! ✅\n\nShort ID:\n`{short_id}`\n\nLink:\n{link}\n\nIdhi Channel lo paste cheyyi mama!", parse_mode="Markdown")
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global batch_mode
@@ -114,6 +115,5 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("batch", batch_start))
     app.add_handler(CommandHandler("done", done))
     app.add_handler(CommandHandler("cancel", cancel))
-    # IDHE MAIN FIX MAMA - Emi pampina pattukuntadhi!
-    app.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL, handle_single))
+    app.add_handler(MessageHandler(filters.ALL, handle_single))
     app.run_polling(drop_pending_updates=True)
